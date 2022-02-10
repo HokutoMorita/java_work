@@ -1,9 +1,12 @@
 package com.api.zoho_crm;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Optional;
+import org.json.JSONObject;
 
 public class Main {
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] args) throws IOException, URISyntaxException {
     System.out.println("Hello World");
     // 環境変数は、intellijの実行構成の編集上で追加すること(https://reasonable-code.com/intellij-environment-variable/)
     String ZOHO_CLIENT_ID = System.getenv("ZOHO_CLIENT_ID");
@@ -30,5 +33,11 @@ public class Main {
     // OAuth
     // logger.info("[1] Using OAuth2.0 get latest AccessToken");
     zohoCrmClient.refreshAccessToken(task);
+
+    // サンプルデータをリクエスト
+    task.setPerPage(Optional.of(3));
+    JSONObject response = zohoCrmClient.getSampleData(task);
+    System.out.println("レスポンス内容確認");
+    System.out.println(response);
   }
 }
