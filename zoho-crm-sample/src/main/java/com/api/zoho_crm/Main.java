@@ -35,8 +35,17 @@ public class Main {
     zohoCrmClient.refreshAccessToken(task);
 
     // サンプルデータをリクエスト
-    task.setPerPage(Optional.of(3));
-    JSONObject response = zohoCrmClient.getSampleData(task);
+    // リクエストパラメータを設定
+    //    task.setPerPage(Optional.of(3));
+    //
+    //    JSONObject response = zohoCrmClient.getSampleData(task);
+    //    System.out.println("レスポンス内容確認");
+    //    System.out.println(response);
+
+    // クエリを使用してデータをリクエスト
+    // フィルター値を設定
+    task.setCreatedTimeFrom(Optional.of("2022-02-13T13:00:00+09:00"));
+    JSONObject response = zohoCrmClient.getSampleDataByQuery(task);
     System.out.println("レスポンス内容確認");
     System.out.println(response);
   }

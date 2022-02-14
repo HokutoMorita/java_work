@@ -22,6 +22,9 @@ public class PluginTask {
   private Optional<String> territoryId = Optional.empty();
   private Optional<Boolean> includeChild = Optional.empty();
 
+  private Optional<String> createdTimeFrom = Optional.empty();
+  private Optional<String> modifiedTimeFrom = Optional.empty();
+
   public PluginTask(
       String accountsUrl,
       String clientId,
@@ -167,5 +170,23 @@ public class PluginTask {
 
   public void setIncludeChild(Optional<Boolean> includeChild) {
     this.includeChild = includeChild;
+  }
+
+  // @ConfigDefault("null")で設定すること
+  public Optional<String> getCreatedTimeFrom() {
+    return createdTimeFrom;
+  }
+
+  public void setCreatedTimeFrom(Optional<String> createdTimeFrom) {
+    this.createdTimeFrom = createdTimeFrom;
+  }
+
+  // @ConfigDefault("null")で設定すること
+  public Optional<String> getModifiedTimeFrom() {
+    return modifiedTimeFrom;
+  }
+
+  public void setModifiedTimeFrom(Optional<String> modifiedTimeFrom) {
+    this.modifiedTimeFrom = modifiedTimeFrom;
   }
 }

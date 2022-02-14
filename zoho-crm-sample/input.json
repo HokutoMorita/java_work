@@ -1,0 +1,3 @@
+{
+  "select_query" : "select Company, Email, Twitter, Created_Time, Modified_Time from Leads where Created_Time > '2022-02-13T13:00:00+09:00' and Modified_Time > '2022-02-13T13:00:00+09:00' limit 1"
+}
