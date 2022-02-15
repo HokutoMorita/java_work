@@ -155,7 +155,8 @@ public class ZohoCrmClient {
 
     // クエリ設定用jsonデータを生成
     JSONObject requestBody = new JSONObject();
-    String selectQuery = this.buildSelectQuery(task);
+//    String selectQuery = this.buildSelectQuery(task);
+    String selectQuery = task.getQuery();
     requestBody.put("select_query", selectQuery);
     request.setEntity(new StringEntity(requestBody.toString(), UTF8_CHARSET));
     request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -184,7 +185,7 @@ public class ZohoCrmClient {
   private String buildSelectQuery(PluginTask task) {
     StringBuilder sb = new StringBuilder();
     sb.append("SELECT ");
-    sb.append(String.join(",", this.selectColumns));
+    sb.append(String.join(",", this.selectColumns)); // TODO カスタムカラムをコンフィグから取得して追加する必要あること
     sb.append(" FROM ");
     sb.append(this.moduleName);
 

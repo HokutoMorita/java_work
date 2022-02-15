@@ -25,6 +25,8 @@ public class PluginTask {
   private Optional<String> createdTimeFrom = Optional.empty();
   private Optional<String> modifiedTimeFrom = Optional.empty();
 
+  private String query = "";
+
   public PluginTask(
       String accountsUrl,
       String clientId,
@@ -188,5 +190,13 @@ public class PluginTask {
 
   public void setModifiedTimeFrom(Optional<String> modifiedTimeFrom) {
     this.modifiedTimeFrom = modifiedTimeFrom;
+  }
+
+  public String getQuery() {
+    return query;
+  }
+
+  public void setQuery(String query) {
+    this.query = query;
   }
 }

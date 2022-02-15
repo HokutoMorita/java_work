@@ -43,8 +43,9 @@ public class Main {
     //    System.out.println(response);
 
     // クエリを使用してデータをリクエスト
-    // フィルター値を設定
-    task.setCreatedTimeFrom(Optional.of("2022-02-13T13:00:00+09:00"));
+    String query =
+        "SELECT custom_user1, custom1, Company, Email, Last_Name, First_Name, Created_Time, Modified_Time FROM Leads WHERE Created_Time >= '2022-02-15T00:00:00+09:00' LIMIT 1";
+    task.setQuery(query);
     JSONObject response = zohoCrmClient.getSampleDataByQuery(task);
     System.out.println("レスポンス内容確認");
     System.out.println(response);
