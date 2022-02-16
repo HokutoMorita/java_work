@@ -28,6 +28,7 @@ import org.json.JSONObject;
 
 public class ZohoCrmClient {
   private static final String UTF8_CHARSET = "UTF-8";
+  private final int QUERY_API_LIMIT = 200;
   private final String moduleName = "Leads";
   private final List<String> selectColumns =
       Arrays.asList(
@@ -153,7 +154,7 @@ public class ZohoCrmClient {
     return uriBuilder.build();
   }
 
-  public JSONObject getSampleDataByQuery(PluginTask task) throws IOException {
+  public JSONObject getSampleDataByQuery(String selectQuery) throws IOException {
     // リードデータを取得する
     String url = "https://www.zohoapis.com/crm/v2/coql";
     HttpEntityEnclosingRequestBase request = (HttpEntityEnclosingRequestBase) new HttpPost(url);
@@ -161,7 +162,6 @@ public class ZohoCrmClient {
     // クエリ設定用jsonデータを生成
     JSONObject requestBody = new JSONObject();
     //    String selectQuery = this.buildSelectQuery(task);
-    String selectQuery = task.getQuery();
     requestBody.put("select_query", selectQuery);
     request.setEntity(new StringEntity(requestBody.toString(), UTF8_CHARSET));
     request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
@@ -224,16 +224,43 @@ public class ZohoCrmClient {
     return schemaColumnMaps;
   }
 
-  public List<Map<String, String>> transformColumnValues(JSONObject responseJson) {
+  public void search(PluginTask task) throws IOException {
+    // TODO 本番では、引数にtaskに加えてPageBuilder pageBuilderを含めてスキーマ情報の書き込みをおこなうこと
+    String baseSelectQuery = task.getQuery();
+    int offset = 0;
+    int totalDataCount = 0;
+    while (true) {
+      String selectQuery = baseSelectQuery + String.format(" LIMIT 200 OFFSET %s", offset);
+      JSONObject response = this.getSampleDataByQuery(selectQuery);
+      JSONArray responseDataJsonArray = response.getJSONArray("data");
+
+      // TODO ここでスキーマ情報にデータを書き込む処理をおこなう
+      List<Map<String, String>> transformedColumnValues =
+          this.transformColumnValues(responseDataJsonArray);
+      System.out.println("整形後のデータの中身確認");
+      System.out.println(transformedColumnValues.toString());
+
+      int responseDataLength = responseDataJsonArray.length();
+      totalDataCount += responseDataLength;
+      if (responseDataLength < QUERY_API_LIMIT) {
+        break; // 取得したデータ件数がQueryAPIの一度のリクエストで取得できる最大件数である200件未満の場合breakする
+      } else {
+        offset += QUERY_API_LIMIT;
+      }
+    }
+    System.out.println("total data count is: " + totalDataCount);
+  }
+
+  public List<Map<String, String>> transformColumnValues(JSONArray responseDataJsonArray) {
     List<Map<String, String>> transformedColumnValues = new ArrayList<>();
-    JSONArray responseDataJsonArray = responseJson.getJSONArray("data");
     for (int i = 0; i < responseDataJsonArray.length(); i++) {
       Map<String, String> transformedColumnMaps = new HashMap<>();
       JSONObject responseDataJson = responseDataJsonArray.getJSONObject(i);
       for (String responseDataJsonKey : responseDataJson.keySet()) {
         try {
           JSONArray responseDataArray = responseDataJson.getJSONArray(responseDataJsonKey);
-          transformedColumnMaps.put(responseDataJsonKey, convertJsonArrayToJson(responseDataJsonKey, responseDataArray));
+          transformedColumnMaps.put(
+              responseDataJsonKey, convertJsonArrayToJson(responseDataJsonKey, responseDataArray));
         } catch (JSONException e) {
           // カラムに紐づく値がリスト形式以外の場合、例外が発生するためcatch文内でリスト形式以外の値を設定する
           // カラムに紐づく値がリスト形式以外の場合、整形せずに値を設定する
@@ -243,12 +270,12 @@ public class ZohoCrmClient {
       }
       transformedColumnValues.add(transformedColumnMaps);
     }
-
     return transformedColumnValues;
   }
 
   /**
-   * hoge = ["item1", "item2", "item3"]のような形式のデータを hoge = {"hoge_items": ["item1", "item2", "item3"]}のような形式に変換する
+   * hoge = ["item1", "item2", "item3"]のような形式のデータを hoge = {"hoge_items": ["item1", "item2",
+   * "item3"]}のような形式に変換する
    */
   private String convertJsonArrayToJson(String keyName, JSONArray responseDataArray) {
     JSONObject jsonObject = new JSONObject();
