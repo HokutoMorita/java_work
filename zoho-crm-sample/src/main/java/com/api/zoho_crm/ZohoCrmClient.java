@@ -190,9 +190,7 @@ public class ZohoCrmClient {
     Map<String, String> schemaColumnMaps = new HashMap<>();
     JSONObject responseDataJson = responseJson.getJSONArray("data").getJSONObject(0);
     for (String dataJsonKey : responseDataJson.keySet()) {
-      System.out.println("キー名: " + dataJsonKey + "のレスポンスの各型の確認");
-      System.out.println(responseDataJson.get(dataJsonKey));
-      System.out.println(responseDataJson.get(dataJsonKey).getClass().getSimpleName());
+      schemaColumnMaps.put(dataJsonKey, "StringType");
     }
     return schemaColumnMaps;
   }
