@@ -2,6 +2,7 @@ package com.api.zoho_crm;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Map;
 import org.json.JSONObject;
 
@@ -44,14 +45,21 @@ public class Main {
 
     // クエリを使用してデータをリクエスト
     String query =
-        "SELECT Fax, Skype_ID, Twitter, Website, Secondary_Email, Email, Email_Opt_Out, Company, Created_By, First_Name, Country, Last_Name, City, Annual_Revenue, No_of_Employees, Mobile, Modified_By, Industry, Street, Designation, Lead_Source, Owner, Record_Image, Lead_Status, Rating, Description, Zip_Code, State, Phone, Created_Time, Modified_Time, custom_user1, custom1 FROM Leads WHERE Created_Time >= '2022-02-15T00:00:00+09:00' LIMIT 1";
+        "SELECT Fax, Skype_ID, Twitter, Website, Secondary_Email, Email, Email_Opt_Out, Company, Created_By, First_Name, Country, Last_Name, City, Annual_Revenue, No_of_Employees, Mobile, Modified_By, Industry, Street, Designation, Lead_Source, Owner, Record_Image, Lead_Status, Rating, Description, Zip_Code, State, Phone, Created_Time, Modified_Time, custom_user1, custom1, custom_select1 FROM Leads WHERE Created_Time >= '2022-02-15T00:00:00+09:00' LIMIT 1";
     task.setQuery(query);
     JSONObject response = zohoCrmClient.getSampleDataByQuery(task);
     System.out.println("レスポンス内容確認");
     System.out.println(response);
 
-    Map<String, String> schemaColumnMaps = zohoCrmClient.createSchemaColumns(response);
-    System.out.println("カラム情報の確認");
-    System.out.println(schemaColumnMaps.toString());
+    // スキーマ情報の確認
+    //    Map<String, String> schemaColumnMaps = zohoCrmClient.createSchemaColumns(response);
+    //    System.out.println("カラム情報の確認");
+    //    System.out.println(schemaColumnMaps.toString());
+
+    // カラムの値がnullではなく値がある かつ リスト形式の場合に{ item_list: [ item1, item2]}の形式に変換できることを確認
+    List<Map<String, String>> transformedColumnValues =
+        zohoCrmClient.transformColumnValues(response);
+    System.out.println("整形後のデータの中身確認");
+    System.out.println(transformedColumnValues.toString());
   }
 }

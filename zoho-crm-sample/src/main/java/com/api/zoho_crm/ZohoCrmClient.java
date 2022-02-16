@@ -3,13 +3,12 @@ package com.api.zoho_crm;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.CookieSpecs;
@@ -23,6 +22,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ZohoCrmClient {
@@ -186,15 +187,6 @@ public class ZohoCrmClient {
     }
   }
 
-  public Map<String, String> createSchemaColumns(JSONObject responseJson) {
-    Map<String, String> schemaColumnMaps = new HashMap<>();
-    JSONObject responseDataJson = responseJson.getJSONArray("data").getJSONObject(0);
-    for (String dataJsonKey : responseDataJson.keySet()) {
-      schemaColumnMaps.put(dataJsonKey, "StringType");
-    }
-    return schemaColumnMaps;
-  }
-
   private String buildSelectQuery(PluginTask task) {
     StringBuilder sb = new StringBuilder();
     sb.append("SELECT ");
@@ -221,5 +213,46 @@ public class ZohoCrmClient {
       sb.append(String.format("Created_Time >= '1970-01-01T00:00:00+09:00' "));
     }
     return sb.toString();
+  }
+
+  public Map<String, String> createSchemaColumns(JSONObject responseJson) {
+    Map<String, String> schemaColumnMaps = new HashMap<>();
+    JSONObject responseDataJson = responseJson.getJSONArray("data").getJSONObject(0);
+    for (String dataJsonKey : responseDataJson.keySet()) {
+      schemaColumnMaps.put(dataJsonKey, "StringType");
+    }
+    return schemaColumnMaps;
+  }
+
+  public List<Map<String, String>> transformColumnValues(JSONObject responseJson) {
+    List<Map<String, String>> transformedColumnValues = new ArrayList<>();
+    JSONArray responseDataJsonArray = responseJson.getJSONArray("data");
+    for (int i = 0; i < responseDataJsonArray.length(); i++) {
+      Map<String, String> transformedColumnMaps = new HashMap<>();
+      JSONObject responseDataJson = responseDataJsonArray.getJSONObject(i);
+      for (String responseDataJsonKey : responseDataJson.keySet()) {
+        try {
+          JSONArray responseDataArray = responseDataJson.getJSONArray(responseDataJsonKey);
+          transformedColumnMaps.put(responseDataJsonKey, convertJsonArrayToJson(responseDataJsonKey, responseDataArray));
+        } catch (JSONException e) {
+          // カラムに紐づく値がリスト形式以外の場合、例外が発生するためcatch文内でリスト形式以外の値を設定する
+          // カラムに紐づく値がリスト形式以外の場合、整形せずに値を設定する
+          transformedColumnMaps.put(
+              responseDataJsonKey, responseDataJson.get(responseDataJsonKey).toString());
+        }
+      }
+      transformedColumnValues.add(transformedColumnMaps);
+    }
+
+    return transformedColumnValues;
+  }
+
+  /**
+   * hoge = ["item1", "item2", "item3"]のような形式のデータを hoge = {"hoge_items": ["item1", "item2", "item3"]}のような形式に変換する
+   */
+  private String convertJsonArrayToJson(String keyName, JSONArray responseDataArray) {
+    JSONObject jsonObject = new JSONObject();
+    jsonObject.put(keyName + "_items", responseDataArray);
+    return jsonObject.toString();
   }
 }
