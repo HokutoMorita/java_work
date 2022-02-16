@@ -4,8 +4,12 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.config.CookieSpecs;
@@ -155,7 +159,7 @@ public class ZohoCrmClient {
 
     // クエリ設定用jsonデータを生成
     JSONObject requestBody = new JSONObject();
-//    String selectQuery = this.buildSelectQuery(task);
+    //    String selectQuery = this.buildSelectQuery(task);
     String selectQuery = task.getQuery();
     requestBody.put("select_query", selectQuery);
     request.setEntity(new StringEntity(requestBody.toString(), UTF8_CHARSET));
@@ -180,6 +184,17 @@ public class ZohoCrmClient {
       System.out.println(responseEntity);
       return new JSONObject(responseEntity);
     }
+  }
+
+  public Map<String, String> createSchemaColumns(JSONObject responseJson) {
+    Map<String, String> schemaColumnMaps = new HashMap<>();
+    JSONObject responseDataJson = responseJson.getJSONArray("data").getJSONObject(0);
+    for (String dataJsonKey : responseDataJson.keySet()) {
+      System.out.println("キー名: " + dataJsonKey + "のレスポンスの各型の確認");
+      System.out.println(responseDataJson.get(dataJsonKey));
+      System.out.println(responseDataJson.get(dataJsonKey).getClass().getSimpleName());
+    }
+    return schemaColumnMaps;
   }
 
   private String buildSelectQuery(PluginTask task) {
