@@ -28,7 +28,8 @@ import org.json.JSONObject;
 
 public class ZohoCrmClient {
   private static final String UTF8_CHARSET = "UTF-8";
-  private final int QUERY_API_LIMIT = 200;
+  private final int QUERY_API_LIMIT = 2;
+  private final String INVALID_TOKEN = "INVALID_TOKEN";
   private final String moduleName = "Leads";
   private final List<String> selectColumns =
       Arrays.asList(
@@ -154,7 +155,7 @@ public class ZohoCrmClient {
     return uriBuilder.build();
   }
 
-  public JSONObject getSampleDataByQuery(String selectQuery) throws IOException {
+  public JSONObject getSampleDataByQuery(String selectQuery, PluginTask task) throws IOException {
     // リードデータを取得する
     String url = "https://www.zohoapis.com/crm/v2/coql";
     HttpEntityEnclosingRequestBase request = (HttpEntityEnclosingRequestBase) new HttpPost(url);
@@ -171,10 +172,20 @@ public class ZohoCrmClient {
     System.out.printf("Using this query %s%n", selectQuery);
     CloseableHttpResponse response = this.httpClient.execute(request);
     int stateCode = response.getStatusLine().getStatusCode();
+    if (response.getEntity() == null) {
+      return null;
+    }
     String responseEntity = EntityUtils.toString(response.getEntity(), UTF8_CHARSET);
     if (!(stateCode == HttpStatus.SC_OK || stateCode == HttpStatus.SC_CREATED)) {
       //      logger.error("HTTP Status: {}", stateCode);
       //      logger.error(responseEntity);
+      String errorCode = new JSONObject(responseEntity).getString("code");
+      if (errorCode.equals(INVALID_TOKEN)) {
+        System.out.println("AccessToken is expired and need to refresh access token.");
+        // アクセストークンが期限切れの場合は、アクセストークンを更新して再度データ取得をする
+        this.refreshAccessToken(task);
+        return getSampleDataByQuery(selectQuery, task);
+      }
       System.out.printf("HTTP Status: %s%n", stateCode);
       System.out.println(responseEntity);
       return new JSONObject(responseEntity);
@@ -229,9 +240,15 @@ public class ZohoCrmClient {
     String baseSelectQuery = task.getQuery();
     int offset = 0;
     int totalDataCount = 0;
+    this.accessToken = "hoge";
     while (true) {
-      String selectQuery = baseSelectQuery + String.format(" LIMIT 200 OFFSET %s", offset);
-      JSONObject response = this.getSampleDataByQuery(selectQuery);
+      String selectQuery =
+          baseSelectQuery + String.format(" LIMIT %s OFFSET %s", QUERY_API_LIMIT, offset);
+      JSONObject response = this.getSampleDataByQuery(selectQuery, task);
+      if (response == null) {
+        System.out.println("This iteration's API response is null");
+        break;
+      }
       JSONArray responseDataJsonArray = response.getJSONArray("data");
 
       // TODO ここでスキーマ情報にデータを書き込む処理をおこなう
