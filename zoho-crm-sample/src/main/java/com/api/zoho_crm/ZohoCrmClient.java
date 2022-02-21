@@ -17,6 +17,7 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -30,6 +31,7 @@ public class ZohoCrmClient {
   private static final String UTF8_CHARSET = "UTF-8";
   private final int QUERY_API_LIMIT = 2;
   private final String INVALID_TOKEN = "INVALID_TOKEN";
+  private final String DUPLICATE_DATA = "DUPLICATE_DATA";
   private final String moduleName = "Leads";
   private final List<String> selectColumns =
       Arrays.asList(
@@ -298,5 +300,75 @@ public class ZohoCrmClient {
     JSONObject jsonObject = new JSONObject();
     jsonObject.put(keyName + "_items", responseDataArray);
     return jsonObject.toString();
+  }
+
+  /** 戻り値として、insert対象データの内、既にZoho CRMで登録されている重複データの件数を返す */
+  public int insertData(JSONArray insertDataList, PluginTask task) throws IOException {
+    String url = String.format("https://www.zohoapis.com/crm/v2/%s", task.getModuleType());
+    HttpEntityEnclosingRequestBase request = (HttpEntityEnclosingRequestBase) new HttpPost(url);
+
+    String responseEntity = this.executeApi(url, request, insertDataList, task);
+    int duplicateCount = 0;
+    try {
+      JSONArray responseDataArray = new JSONObject(responseEntity).getJSONArray("data");
+      // TODO 重複データはinsertされないので、重複したデータは、
+      //  Warningログとしてembulk上で出力する、どのIDが重複しているかがわかるようにIDも出力する、
+      //  trocco上では、embulkの実行ログの中からスキップした行数をカウントするようになっている
+      //  戻り値として、重複したデータの件数を返すので、insertDataメソッドの呼び出し先でトータルの重複件数を算出すること
+      //  重複件数の出力フォーマットはこちらのプルリクを参考にすること: https://github.com/primenumber-dev/n-transfer-ui/pull/2431/files
+      for (int i = 0; i < responseDataArray.length(); i++) {
+        JSONObject record = responseDataArray.getJSONObject(i);
+        String statusCode = record.getString("code");
+        if (statusCode.equals(DUPLICATE_DATA)) {
+          String id = record.getJSONObject("details").getString("id");
+          // logger.warn("This record has already been registered, so it was duplicated.");
+          // logger.warn("Duplicated record id is {}", id);
+          System.out.println("This record has already been registered, so it was duplicated.");
+          System.out.printf("Duplicated record id is %s%n", id);
+          duplicateCount++;
+        }
+      }
+    } catch (JSONException e) {
+      String errorCode = new JSONObject(responseEntity).getString("code");
+      if (errorCode.equals(INVALID_TOKEN)) {
+        // logger.error("AccessToken is expired and need to refresh access token.");
+        System.out.println("AccessToken is expired and need to refresh access token.");
+        // アクセストークンが期限切れの場合は、アクセストークンを更新して再度データ取得をする
+        this.refreshAccessToken(task);
+        insertData(insertDataList, task);
+      }
+    }
+    return duplicateCount;
+  }
+
+  public void updateData(JSONArray updateDataList, PluginTask task) throws IOException {
+    String url = String.format("https://www.zohoapis.com/crm/v2/%s", task.getModuleType());
+    HttpEntityEnclosingRequestBase request = (HttpEntityEnclosingRequestBase) new HttpPut(url);
+
+    // TODO ここに実装する
+  }
+
+  private String executeApi(
+      String url, HttpEntityEnclosingRequestBase request, JSONArray dataList, PluginTask task)
+      throws IOException {
+    // リクエストボディ生成
+    JSONObject requestBody = new JSONObject();
+    requestBody.put("data", dataList);
+    request.setEntity(new StringEntity(requestBody.toString(), UTF8_CHARSET));
+
+    // リクエストヘッダー生成
+    request.addHeader(HttpHeaders.CONTENT_TYPE, "application/json");
+    request.addHeader(HttpHeaders.AUTHORIZATION, "Zoho-oauthtoken " + this.accessToken);
+
+    // API呼び出し
+    System.out.printf("Get request at this URL %s%n", url);
+    CloseableHttpResponse response = this.httpClient.execute(request);
+    int stateCode = response.getStatusLine().getStatusCode();
+    String responseEntity = EntityUtils.toString(response.getEntity(), UTF8_CHARSET);
+    //      logger.info("HTTP Status: {}", stateCode);
+    //      logger.info(responseEntity);
+    System.out.printf("HTTP Status: %s%n", stateCode);
+    System.out.println(responseEntity);
+    return responseEntity;
   }
 }

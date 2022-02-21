@@ -25,6 +25,10 @@ public class PluginTask {
   private Optional<String> createdTimeFrom = Optional.empty();
   private Optional<String> modifiedTimeFrom = Optional.empty();
 
+  private String action;
+
+  private String moduleType;
+
   private String query = "";
 
   public PluginTask(
@@ -198,5 +202,21 @@ public class PluginTask {
 
   public void setQuery(String query) {
     this.query = query;
+  }
+
+  public String getAction() {
+    return action;
+  }
+
+  public void setAction(String action) {
+    this.action = action;
+  }
+
+  public String getModuleType() {
+    return moduleType;
+  }
+
+  public void setModuleType(String moduleType) {
+    this.moduleType = moduleType;
   }
 }
