@@ -28,7 +28,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ZohoCrmClient {
-  private static final String UTF8_CHARSET = "UTF-8";
+  private final String UTF8_CHARSET = "UTF-8";
   private final int QUERY_API_LIMIT = 2;
   private final String INVALID_TOKEN = "INVALID_TOKEN";
   private final String DUPLICATE_DATA = "DUPLICATE_DATA";
@@ -305,9 +305,9 @@ public class ZohoCrmClient {
   /** 戻り値として、insert対象データの内、既にZoho CRMで登録されている重複データの件数を返す */
   public int insertData(JSONArray insertDataList, PluginTask task) throws IOException {
     String url = String.format("https://www.zohoapis.com/crm/v2/%s", task.getModuleType());
-    HttpEntityEnclosingRequestBase request = (HttpEntityEnclosingRequestBase) new HttpPost(url);
+    HttpEntityEnclosingRequestBase request = new HttpPost(url);
 
-    String responseEntity = this.executeApi(url, request, insertDataList, task);
+    String responseEntity = this.executeApi(url, request, insertDataList);
     int duplicateCount = 0;
     try {
       JSONArray responseDataArray = new JSONObject(responseEntity).getJSONArray("data");
@@ -343,13 +343,12 @@ public class ZohoCrmClient {
 
   public void updateData(JSONArray updateDataList, PluginTask task) throws IOException {
     String url = String.format("https://www.zohoapis.com/crm/v2/%s", task.getModuleType());
-    HttpEntityEnclosingRequestBase request = (HttpEntityEnclosingRequestBase) new HttpPut(url);
+    HttpEntityEnclosingRequestBase request = new HttpPut(url);
 
     // TODO ここに実装する
   }
 
-  private String executeApi(
-      String url, HttpEntityEnclosingRequestBase request, JSONArray dataList, PluginTask task)
+  private String executeApi(String url, HttpEntityEnclosingRequestBase request, JSONArray dataList)
       throws IOException {
     // リクエストボディ生成
     JSONObject requestBody = new JSONObject();

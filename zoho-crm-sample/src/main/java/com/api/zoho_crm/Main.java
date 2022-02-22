@@ -66,8 +66,10 @@ public class Main {
     //    System.out.println(transformedColumnValues.toString());
 
     // データサーチメソッドの確認
+//    String query =
+//        "SELECT Fax, Skype_ID, Twitter, Website, Secondary_Email, Email, Email_Opt_Out, Company, Created_By, First_Name, Country, Last_Name, City, Annual_Revenue, No_of_Employees, Mobile, Modified_By, Industry, Street, Designation, Lead_Source, Owner, Record_Image, Lead_Status, Rating, Description, Zip_Code, State, Phone, Created_Time, Modified_Time, custom_user1, custom1, custom_select1 FROM Leads WHERE Created_Time >= '2021-02-15T00:00:00+09:00'";
     String query =
-        "SELECT Fax, Skype_ID, Twitter, Website, Secondary_Email, Email, Email_Opt_Out, Company, Created_By, First_Name, Country, Last_Name, City, Annual_Revenue, No_of_Employees, Mobile, Modified_By, Industry, Street, Designation, Lead_Source, Owner, Record_Image, Lead_Status, Rating, Description, Zip_Code, State, Phone, Created_Time, Modified_Time, custom_user1, custom1, custom_select1 FROM Leads WHERE Created_Time >= '2021-02-15T00:00:00+09:00'";
+            "SELECT id, Email, First_Name, Last_Name, State FROM Leads WHERE Created_Time >= '2021-02-15T00:00:00+09:00'";
     task.setQuery(query);
     zohoCrmClient.search(task);
   }
